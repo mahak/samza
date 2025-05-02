@@ -30,7 +30,12 @@ cd $home_dir
 
 echo "Current time: $(date '+%Y-%m-%d %H:%M:%S')"
 
+# For example, home_dir looks like:
+# /<hadoop dir>/usercache/<linux account>/appcache/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027
 echo home_dir=$home_dir
+
+# For example, base_dir looks like:
+# /<hadoop path>/usercache/<linux account>/appcache/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027/__package
 echo "framework base (location of this script). base_dir=$base_dir"
 
 if [ ! -d "$base_dir/lib" ]; then
@@ -78,15 +83,23 @@ fi
 # permissions for the classpath-related files when they are in their own directory. An example of where
 # this is helpful is when using container images which might have predefined permissions for certain
 # directories.
-CLASSPATH_WORKSPACE_DIR=$base_dir/classpath_workspace
+
+# For example, CLASSPATH_WORKSPACE_DIR looks like:
+# /<hadoop dir>/usercache/<linux account>/appcache/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027/classpath_workspace
+CLASSPATH_WORKSPACE_DIR=$home_dir/classpath_workspace
 mkdir -p $CLASSPATH_WORKSPACE_DIR
+
 # file containing the classpath string; used to avoid passing long classpaths directly to the jar command
 PATHING_MANIFEST_FILE=$CLASSPATH_WORKSPACE_DIR/manifest.txt
+echo "Pathing manifest txt located at $PATHING_MANIFEST_FILE"
+
 # jar file to include on the classpath for running the main class
 PATHING_JAR_FILE=$CLASSPATH_WORKSPACE_DIR/pathing.jar
+echo "Pathing manifest jar located at $PATHING_JAR_FILE"
 
 # Newlines and spaces are intended to ensure proper parsing of manifest in pathing jar
 printf "Class-Path: \n $CLASSPATH \n" > $PATHING_MANIFEST_FILE
+
 # Creates a new archive and adds custom manifest information to pathing.jar
 eval "$JAR -cvmf $PATHING_MANIFEST_FILE $PATHING_JAR_FILE"
 
@@ -97,12 +110,18 @@ else
 fi
 
 if [ -z "$SAMZA_LOG_DIR" ]; then
-  SAMZA_LOG_DIR="$base_dir"
+  # SAMZA_LOG_DIR will point to the symlink located at:
+  # /<hadoop dir>/usercache/<linux account>/appcache/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027/logs
+  #
+  # When the symlink is resolved, this path will point to:
+  # /<hadoop dir>/userlogs/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027
+  SAMZA_LOG_DIR="$home_dir/logs"
 fi
 
-# add usercache directory
-mkdir -p $base_dir/tmp
-JAVA_TEMP_DIR=$base_dir/tmp
+# JAVA_TEMP_DIR will point to a path similar to:
+# /<hadoop dir>/usercache/<linux account>/appcache/application_1745893616511_0059/container_e64_1745893616511_0059_01_002027/tmp
+mkdir -p $home_dir/tmp
+JAVA_TEMP_DIR=$home_dir/tmp
 
 # Check whether the JVM supports GC Log rotation, and enable it if so.
 function check_and_enable_gc_log_rotation {
